@@ -35,6 +35,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         ${PROJECT_SOURCES}
         adminmainwindow.ui adminwindow.ui workermainwindow.ui workerwindow.ui
         addworker.h addworker.cpp addworker.ui
+        employee.h employee.cpp
     )
     find_package(Qt6 REQUIRED COMPONENTS PrintSupport)
     target_link_libraries(kursovaa PRIVATE Qt6::PrintSupport)

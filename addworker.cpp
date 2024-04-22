@@ -26,16 +26,17 @@ void addworker::addNewWorker() {
         ui->lineEdit_2->text().isEmpty() ||
         ui->lineEdit_3->text().isEmpty() ||
         ui->lineEdit_4->text().isEmpty() ||
-        ui->lineEdit_5->text().isEmpty() ||
         ui->lineEdit_6->text().isEmpty() ||
-        ui->lineEdit_7->text().isEmpty()) {
+        ui->lineEdit_7->text().isEmpty() ||
+        ui->lineEdit_8->text().isEmpty() ||
+        ui->lineEdit_9->text().isEmpty()) {
         QMessageBox::critical(this, "Error", "Будь ласка, заповніть всі поля!");
         return;
     }
 
     QSqlQuery query;
-    query.prepare("INSERT INTO employees (full_name, position, salary, characteristics, monthly_profit, working_days, missed_days) "
-                  "VALUES (?, ?, ?, ?, ?, ?, ?)");
+    query.prepare("INSERT INTO employees (full_name, position, salary, characteristics, monthly_profit, working_days, missed_days, login, password) "
+                  "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
     query.addBindValue(ui->lineEdit->text());
     query.addBindValue(ui->lineEdit_2->text());
     query.addBindValue(ui->lineEdit_3->text().toDouble());
@@ -43,6 +44,8 @@ void addworker::addNewWorker() {
     query.addBindValue(ui->lineEdit_5->text().toDouble());
     query.addBindValue(ui->lineEdit_6->text().toInt());
     query.addBindValue(ui->lineEdit_7->text().toInt());
+    query.addBindValue(ui->lineEdit_8->text());
+    query.addBindValue(ui->lineEdit_9->text());
 
     if(query.exec()) {
         QMessageBox::information(this, "Success", "Нового робітника додано!");
@@ -53,6 +56,8 @@ void addworker::addNewWorker() {
         ui->lineEdit_5->clear();
         ui->lineEdit_6->clear();
         ui->lineEdit_7->clear();
+        ui->lineEdit_8->clear();
+        ui->lineEdit_9->clear();
     } else {
         QMessageBox::critical(this, "Error", "Сталася помилка!");
     }
@@ -64,4 +69,5 @@ void addworker::on_pushButton_2_clicked()
     close();
     aw->show();
 }
+
 

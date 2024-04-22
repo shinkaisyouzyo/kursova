@@ -31,7 +31,9 @@ adminmainwindow::adminmainwindow(QWidget *parent)
                               "characteristics TEXT,"
                               "monthly_profit REAL,"
                               "working_days INTEGER,"
-                              "missed_days INTEGER"
+                              "missed_days INTEGER,"
+                              "login TEXT,"
+                              "password TEXT"
                               ")");
     if (!success) {
         qDebug() << "Помилка при створенні таблиці:" << query.lastError().text();
@@ -39,8 +41,7 @@ adminmainwindow::adminmainwindow(QWidget *parent)
     }
 
 
-    success = query.exec("INSERT INTO employees (full_name, position, salary, characteristics, monthly_profit, working_days, missed_days) "
-                         "VALUES ('Іван Петров', 'Програміст', 5000.0, 'Досвідчений розробник', 10000.0, 20, 2)");
+
 
     if (!success) {
         qDebug() << "Помилка додавання даних:" << query.lastError().text();
@@ -72,8 +73,7 @@ void adminmainwindow::on_pushButton_2_clicked()
     QSqlQuery selectQuery;
     selectQuery.prepare("SELECT * FROM employees WHERE full_name = ?");
     selectQuery.addBindValue(employeeName);
-    if (selectQuery.exec() && selectQuery.next()) {
-
+    if (selectQuery.exec() && selectQuery.next() && !employeeName.isEmpty()) {
         QString fullName = selectQuery.value("full_name").toString();
         QString position = selectQuery.value("position").toString();
         double salary = selectQuery.value("salary").toDouble();
@@ -81,6 +81,9 @@ void adminmainwindow::on_pushButton_2_clicked()
         double monthlyProfit = selectQuery.value("monthly_profit").toDouble();
         int workingDays = selectQuery.value("working_days").toInt();
         int missedDays = selectQuery.value("missed_days").toInt();
+        QString Login1 = selectQuery.value("login").toString();
+        QString Password1 = selectQuery.value("password").toString();
+
 
 
         ui->lineEdit->setText(fullName);
@@ -90,6 +93,8 @@ void adminmainwindow::on_pushButton_2_clicked()
         ui->lineEdit_5->setText(QString::number(monthlyProfit));
         ui->lineEdit_6->setText(QString::number(workingDays));
         ui->lineEdit_7->setText(QString::number(missedDays));
+        ui->lineEdit_9->setText(Login1);
+        ui->lineEdit_10->setText(Password1);
     } else {
         QMessageBox::critical(this, "Error", "Працівника з таким ім'ям не знайдено!");
         qDebug() << "Не вдалося отримати дані про працівника з бази даних";

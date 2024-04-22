@@ -4,18 +4,34 @@
 #include "ui_workermainwindow.h"
 #include "druk.h"
 #include <QTextStream>
+#include <QtSql>
+#include <QMessageBox>
 
 
 double workermainwindow::pributok = 0.0;
-
-workermainwindow::workermainwindow(QWidget *parent)
+int workermainwindow::nomerz = 0;
+workermainwindow::workermainwindow(const QString &login, const QString &password, QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::workermainwindow)
+    , employee(login, password, 0.0)
+    , currentLogin(login)
 {
     ui->setupUi(this);
 
+    loadMonthlyProfitFromDatabase();
+
+    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
+    db.setDatabaseName("employees.db"); // Путь к вашей базе данных SQLite
+    if (!db.open()) {
+        // Обработка ошибки подключения к базе данных
+        QMessageBox::critical(this, "Ошибка", "Не удалось открыть базу данных!");
+    }
+
+    employee.loadEmployeeData(login);
+    employee.loadEmployeeData(password);
 
     connect(ui->list1, &QListWidget::itemClicked, this, &workermainwindow::on_list1_itemClicked);
+
 
 
 
@@ -38,25 +54,12 @@ workermainwindow::workermainwindow(QWidget *parent)
     prices["Грецький салат з оливками та фето"] = 120;
     prices["Салат з авокадо, креветками та манго"] = 180;
 
-    QFile file("pributok.txt");
-    if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        QTextStream in(&file);
-        QString pributokStr = in.readAll();
-        workermainwindow::pributok = pributokStr.toDouble();
-        file.close();
-    }
-}
+ }
 
 
 
 workermainwindow::~workermainwindow()
 {
-    QFile file("pributok.txt");
-    if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        QTextStream out(&file);
-        out << workermainwindow::pributok;
-        file.close();
-    }
 
     delete ui;
 }
@@ -115,29 +118,18 @@ void workermainwindow::on_list2_itemClicked(QListWidgetItem *item)
 {
     qDebug() << "on_list2_itemClicked called";
 
-
     if (item) {
         QString itemName = item->text().split(" - ").first();
-
         double price = prices.value(itemName, 0.0);
 
-        selectedItemsNames.append(itemName);
+        // Добавляем цену товара к текущей общей стоимости
+        double currentMonthlyProfit = ui->lineEdit_3->text().toDouble();
+        double total = currentMonthlyProfit + price;
 
-
-        ui->lineEdit_5->setText(selectedItemsNames.join("\n"));
-
-
-        selectedPrices.append(price);
-
-
-        updateTotalPrice();
+        // Устанавливаем новое значение общей стоимости в lineEdit_3
+        ui->lineEdit_3->setText(QString::number(total));
     }
 }
-
-
-
-
-
 
 
 
@@ -148,27 +140,31 @@ void workermainwindow::on_pushButton_clicked()
 
     QString textFromLineEdit2 = ui->lineEdit_2->text();
 
+    QString monthlyProfitString = ui->lineEdit_3->text();
+    double monthlyProfit = monthlyProfitString.toDouble();
 
     QString textFromLineEdit4 = ui->lineEdit_4->text();
 
     QString textFromTextEdit5 = ui->lineEdit_5->toPlainText();
 
+    QString currentMonthlyProfitString = ui->lineEdit_3->text();
+    double currentMonthlyProfit = currentMonthlyProfitString.toDouble();
+    double updatedMonthlyProfit = currentMonthlyProfit + pributok;
 
 
-    pributok += textFromLineEdit4.toDouble();
+     ui->lineEdit_3->setText(QString::number(updatedMonthlyProfit));
 
 
-    qDebug() << "pributok: " << pributok;
-
-
-    QString pributokString = QString::number(pributok);
-
-
-    ui->lineEdit_3->setText(pributokString);
+    QSqlQuery query;
+    query.prepare("UPDATE employees SET monthly_profit = :monthlyProfit WHERE login = :login");
+    query.bindValue(":monthlyProfit", monthlyProfit);
+    query.bindValue(":login", currentLogin);
+    if (!query.exec()) {
+        // Обработка ошибки
+    }
 
 
     window1 = new druk(this);
-    //  window1->setLineEditValue(textFromLineEdit);
     window1->setLineEdit2Value(textFromLineEdit2);
     window1->setLineEdit3Value(textFromLineEdit4);
     window1->setLineEdit4Value(textFromTextEdit5);
@@ -176,17 +172,21 @@ void workermainwindow::on_pushButton_clicked()
 
     QString currentValue = ui->lineEdit_2->text();
 
-    // Преобразуем строку в число (в данном случае, предполагается, что строка содержит действительное число)
+
     double currentValueDouble = currentValue.toDouble();
 
-    // Увеличиваем значение на ваше число
+
     double newValue = currentValueDouble + 1;
 
-    // Преобразуем новое значение обратно в строку
+
     QString newValueString = QString::number(newValue);
 
-    // Устанавливаем новое значение в lineEdit
+
     ui->lineEdit_2->setText(newValueString);
+
+
+    double additionalProfit = ui->lineEdit_4->text().toDouble(); // Получаем дополнительную прибыль
+    employee.updateEmployeeProfit(additionalProfit);
 }
 
 
@@ -195,14 +195,14 @@ void workermainwindow::on_pushButton_2_clicked()
     ui->lineEdit_4->clear();
     ui->lineEdit_5->clear();
 
-    // Очистка списка выбранных элементов и их цен
+
     selectedItemsNames.clear();
     selectedPrices.clear();
 
 
 }
 
-// workermainwindow.cpp
+
 
 void workermainwindow::addItemWithPrice(const QString &itemName)
 {
@@ -210,25 +210,27 @@ void workermainwindow::addItemWithPrice(const QString &itemName)
     QString itemText = itemName + " - Ціна: " + QString::number(price) + " грн.";
     ui->list2->addItem(itemText);
 
-    qDebug() << "Добавлен элемент в list2: " << itemText;  // Отладочный вывод
+    qDebug() << "Добавлен элемент в list2: " << itemText;
 }
 
 
 
-void workermainwindow::updateTotalPrice()
+void workermainwindow::loadMonthlyProfitFromDatabase()
 {
-    // Обновление значения lineEdit_4
-    double total = 0.0;
-    for (double itemPrice : selectedPrices) {
-        total += itemPrice;
+    // Загрузка значения monthly_profit из базы данных для текущего пользователя
+    QSqlQuery query;
+    query.prepare("SELECT monthly_profit FROM employees WHERE login = :login");
+    query.bindValue(":login", currentLogin);
+    if (!query.exec() || !query.first()) {
+        // Обработка ошибки или пользователя не найден
+        return;
     }
 
-    // Установим обновленное значение lineEdit_4
-    ui->lineEdit_4->setText(QString::number(total));
+    double monthlyProfit = query.value(0).toDouble();
+    QString monthlyProfitString = QString::number(monthlyProfit);
 
-    // Обновим значение lineEdit_5
-    ui->lineEdit_5->setText(selectedItemsNames.join("\n"));
+    // Установка значения в lineEdit_3
+    ui->lineEdit_3->setText(monthlyProfitString);
 }
-
 
 

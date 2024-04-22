@@ -83,7 +83,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QLineEdit" name="password">
+      <widget class="QLineEdit" name="passwordui">
        <property name="echoMode">
         <enum>QLineEdit::Password</enum>
        </property>
@@ -112,7 +112,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QLineEdit" name="login"/>
+      <widget class="QLineEdit" name="loginui"/>
      </item>
     </layout>
    </widget>
@@ -153,8 +153,8 @@
   <zorder>groupBox</zorder>
  </widget>
  <tabstops>
-  <tabstop>login</tabstop>
-  <tabstop>password</tabstop>
+  <tabstop>loginui</tabstop>
+  <tabstop>passwordui</tabstop>
   <tabstop>pushButton</tabstop>
   <tabstop>pushButton_2</tabstop>
  </tabstops>

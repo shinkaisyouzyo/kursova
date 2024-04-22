@@ -2,7 +2,8 @@
 #include "ui_workerwindow.h"
 #include <QMessageBox>
 #include "workermainwindow.h"
-#include "mainwindow.h" // Включаємо файл заголовка головного вікна
+#include "mainwindow.h"
+#include <QtSql>
 
 workerwindow::workerwindow(QWidget *parent)
     : QDialog(parent)
@@ -10,8 +11,13 @@ workerwindow::workerwindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-    // Створити екземпляр головного вікна
+
     mainWindow = new MainWindow();
+    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
+    db.setDatabaseName("employees.db"); // Путь к вашей базе данных SQLite
+    if (!db.open()) {
+        QMessageBox::critical(this, "Ошибка", "Не удалось открыть базу данных!");
+    }
 
 }
 
@@ -22,20 +28,25 @@ workerwindow::~workerwindow()
 
 void workerwindow::on_pushButton_clicked()
 {
-    QString login = ui->login->text();
-    QString password = ui->password->text();
+    QString login = ui->loginui->text();
+    QString password = ui->passwordui->text();
 
-    if(login == "User" && password == "123") {
+    QSqlQuery query;
+    query.prepare("SELECT * FROM employees WHERE login = :login AND password = :password");
+    query.bindValue(":login", login);
+    query.bindValue(":password", password);
+    if (query.exec() && query.next()) {
         close();
-        window1 = new workermainwindow(this);
+        window1 = new workermainwindow(login, password, this);
         window1->show();
     } else {
-        QMessageBox::warning(this, "Авторизація", "Данні введені неправильно");
+        QMessageBox::warning(this, "Авторизация", "Данные введены неправильно");
     }
 }
+
 
 void workerwindow::on_pushButton_2_clicked()
 {
     close();
-    mainWindow->show(); // Показати існуючий екземпляр головного вікна
+    mainWindow->show();
 }
